@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, Key, Zap, DollarSign, Activity, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, Key, Zap, Activity, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAdminStore } from '../../hooks/useAdminStore';
 
 export default function AdminDashboard() {
@@ -34,7 +34,6 @@ export default function AdminDashboard() {
         <p className="text-sm text-[#9090a0] mt-1">FrameForge platform overview</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-4">
@@ -49,13 +48,12 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Engines */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-5">
           <h3 className="text-sm font-semibold text-[#f0f0f5] mb-4 flex items-center gap-2"><TrendingUp size={14} className="text-[#a855f7]" /> Top Engines</h3>
           <div className="space-y-3">
             {topEngines.map((e) => (
               <div key={e.engineId} className="flex items-center gap-3">
-                <span className="text-xs text-[#9090a0] w-24 truncate">{e.engineName}</span>
+                <span className="text-xs text-[#9090a0] w-28 truncate">{e.engineName}</span>
                 <div className="flex-1 h-2 bg-[#27273a] rounded-full overflow-hidden">
                   <motion.div className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899]" initial={{ width: 0 }} animate={{ width: `${Math.min((e.usage / e.rateLimit) * 100, 100)}%` }} transition={{ duration: 0.8 }} />
                 </div>
@@ -65,7 +63,6 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
 
-        {/* Recent Users */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-5">
           <h3 className="text-sm font-semibold text-[#f0f0f5] mb-4 flex items-center gap-2"><Users size={14} className="text-[#00d4ff]" /> Recent Users</h3>
           <div className="space-y-2">
