@@ -83,13 +83,7 @@ export const useStore = create<AppState>()(
       upgradePlan: (plan) => {
         const { user } = get();
         if (!user) return;
-        set({
-          user: {
-            ...user,
-            plan,
-            promptLimit: PLAN_CONFIG[plan].promptLimit,
-          },
-        });
+        set({ user: { ...user, plan, promptLimit: PLAN_CONFIG[plan].promptLimit } });
       },
 
       setSelectedEngine: (id) => set({ selectedEngineId: id }),
@@ -97,55 +91,17 @@ export const useStore = create<AppState>()(
       addPrompt: (engineId, engineName, prompt, values) => {
         const { user, prompts } = get();
         if (!user) return { success: false, error: 'Not logged in' };
-
-        if (user.plan === 'free' && user.promptsThisMonth >= 200) {
-          return { success: false, error: 'LIMIT_REACHED' };
-        }
-        if (user.plan === 'premium' && user.promptsThisMonth >= 2000) {
-          return { success: false, error: 'LIMIT_REACHED' };
-        }
-
-        const entry: PromptEntry = {
-          id: genId(),
-          engineId,
-          engineName,
-          prompt,
-          values,
-          createdAt: new Date().toISOString(),
-          favorite: false,
-        };
-
-        set({
-          prompts: [entry, ...prompts],
-          user: {
-            ...user,
-            promptsGenerated: user.promptsGenerated + 1,
-            promptsThisMonth: user.promptsThisMonth + 1,
-            lastActive: new Date().toISOString(),
-          },
-        });
+        if (user.plan === 'free' && user.promptsThisMonth >= 200) return { success: false, error: 'LIMIT_REACHED' };
+        if (user.plan === 'premium' && user.promptsThisMonth >= 2000) return { success: false, error: 'LIMIT_REACHED' };
+        const entry: PromptEntry = { id: genId(), engineId, engineName, prompt, values, createdAt: new Date().toISOString(), favorite: false };
+        set({ prompts: [entry, ...prompts], user: { ...user, promptsGenerated: user.promptsGenerated + 1, promptsThisMonth: user.promptsThisMonth + 1, lastActive: new Date().toISOString() } });
         return { success: true };
       },
 
-      toggleFavorite: (id) =>
-        set((s) => ({
-          prompts: s.prompts.map((p) =>
-            p.id === id ? { ...p, favorite: !p.favorite } : p
-          ),
-        })),
+      toggleFavorite: (id) => set((s) => ({ prompts: s.prompts.map((p) => p.id === id ? { ...p, favorite: !p.favorite } : p) })),
 
-      deletePrompt: (id) =>
-        set((s) => ({
-          prompts: s.prompts.filter((p) => p.id !== id),
-        })),
+      deletePrompt: (id) => set((s) => ({ prompts: s.prompts.filter((p) => p.id !== id) })),
     }),
-    {
-      name: 'frameforge-storage',
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        prompts: state.prompts,
-      }),
-    }
+    { name: 'frameforge-storage', partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated, prompts: state.prompts }) }
   )
 );
