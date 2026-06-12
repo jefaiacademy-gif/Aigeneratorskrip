@@ -1,0 +1,21 @@
+{
+  "name": "frameforge",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:user": "cd apps/user && npm run dev",
+    "dev:admin": "cd apps/admin && npm run dev",
+    "build:user": "cd apps/user && npm run build",
+    "build:admin": "cd apps/admin && npm run build",
+    "build": "npm run build:shared && npm run build:user && npm run build:admin",
+    "build:shared": "cd packages/shared && npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
