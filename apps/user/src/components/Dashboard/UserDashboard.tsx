@@ -261,3 +261,85 @@ export default function UserDashboard() {
     </div>
   );
 }
+
+import { motion } from 'framer-motion';
+import { Zap, Clock, Star, TrendingUp, Crown, CreditCard, Calendar } from 'lucide-react';
+import { useStore, PLAN_CONFIG } from '../../hooks/useStore';
+
+export default function UserDashboard() {
+  const { user, prompts } = useStore();
+
+  if (!user) {
+    return <div className="p-8 text-center text-[#9090a0]">Please log in to view your dashboard.</div>;
+  }
+
+  const planConfig = PLAN_CONFIG[user.plan];
+  const usagePercent = (user.promptsThisMonth / user.promptLimit) * 100;
+  const recentPrompts = prompts.slice(0, 5);
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      {/* Welcome */}
+      <div>
+        <h2 className="text-2xl font-bold text-white">Welcome, {user.name}</h2>
+        <p className="text-sm text-[#9090a0] mt-1">Here's your creative activity overview.</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Prompts', value: user.promptsGenerated.toLocaleString(), icon: Zap, color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10' },
+          { label: 'This Month', value: `${user.promptsThisMonth}/${user.promptLimit === 999999 ? '∞' : user.promptLimit}`, icon: TrendingUp, color: 'text-[#a855f7]', bg: 'bg-[#a855f7]/10' },
+          { label: 'Saved', value: prompts.filter((p) => p.favorite).length.toString(), icon: Star, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+          { label: 'Plan', value: planConfig.name, icon: Crown, color: user.plan === 'enterprise' ? 'text-purple-400' : user.plan === 'premium' ? 'text-amber-400' : 'text-gray-400', bg: user.plan === 'enterprise' ? 'bg-purple-400/10' : user.plan === 'premium' ? 'bg-amber-400/10' : 'bg-gray-400/10' },
+        ].map((stat, i) => (
+          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-4">
+            <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center mb-2`}><stat.icon size={16} className={stat.color} /></div>
+            <p className="text-xl font-bold text-white">{stat.value}</p>
+            <p className="text-xs text-[#9090a0]">{stat.label}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Plan Card */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-gradient-to-r from-[#a855f7]/20 to-[#ec4899]/20 border border-[#a855f7]/30 rounded-xl p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Crown size={18} className="text-[#a855f7]" />
+              <span className="text-white font-semibold">{planConfig.name} Plan</span>
+            </div>
+            <p className="text-xs text-[#9090a0] mt-1">{planConfig.promptLimit === 999999 ? 'Unlimited' : planConfig.promptLimit.toLocaleString()} prompts/month</p>
+          </div>
+          {user.plan !== 'enterprise' && (
+            <button onClick={() => { const plans: Array<'free' | 'premium' | 'enterprise'> = ['free', 'premium', 'enterprise']; const next = plans[plans.indexOf(user.plan) + 1]; if (next) useStore.getState().upgradePlan(next); }} className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#a855f7] to-[#ec4899] text-white text-sm font-medium hover:opacity-90 transition flex items-center gap-1">
+              <CreditCard size={14} /> Upgrade
+            </button>
+          )}
+        </div>
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-xs mb-1"><span className="text-[#9090a0]">Usage</span><span className="text-[#f0f0f5]">{Math.round(usagePercent)}%</span></div>
+          <div className="w-full h-2 bg-[#27273a] rounded-full overflow-hidden"><div className={`h-full rounded-full ${usagePercent > 90 ? 'bg-red-500' : 'bg-gradient-to-r from-[#a855f7] to-[#ec4899]'}`} style={{ width: `${Math.min(usagePercent, 100)}%` }} /></div>
+        </div>
+      </motion.div>
+
+      {/* Recent Prompts */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-[#f0f0f5] mb-3 flex items-center gap-2"><Clock size={14} className="text-[#00d4ff]" /> Recent Prompts</h3>
+        {recentPrompts.length === 0 ? (
+          <p className="text-xs text-[#9090a0] text-center py-4">No prompts yet. Start generating!</p>
+        ) : (
+          <div className="space-y-2">
+            {recentPrompts.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-[#0a0a0f] border border-[#27273a]/50">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#00d4ff]/10 text-[#00d4ff]">{p.engineName}</span>
+                <p className="text-sm text-[#f0f0f5] truncate flex-1">{p.prompt}</p>
+                <span className="text-xs text-[#606070]">{new Date(p.createdAt).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Account Info */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{

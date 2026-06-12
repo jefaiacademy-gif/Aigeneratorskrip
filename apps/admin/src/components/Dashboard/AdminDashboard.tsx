@@ -1,250 +1,88 @@
 import { motion } from 'framer-motion';
-import {
-  Users,
-  Key,
-  Zap,
-  CreditCard,
-  TrendingUp,
-  TrendingDown,
-  Check,
-  Crown,
-} from 'lucide-react';
+import { Users, Key, Zap, DollarSign, Activity, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAdminStore } from '../../hooks/useAdminStore';
-import StatsChart from './StatsChart';
-import TopEnginesChart from './TopEnginesChart';
-
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
-};
-
-const usageData = [
-  { day: 'Mon', requests: 12400 },
-  { day: 'Tue', requests: 15200 },
-  { day: 'Wed', requests: 11800 },
-  { day: 'Thu', requests: 18900 },
-  { day: 'Fri', requests: 22100 },
-  { day: 'Sat', requests: 16400 },
-  { day: 'Sun', requests: 13700 },
-];
-
-const topEnginesData = [
-  { name: 'GPT-4o', value: 8450 },
-  { name: 'DALL-E 3', value: 6720 },
-  { name: 'Runway', value: 5340 },
-  { name: 'Claude', value: 4890 },
-  { name: 'Midjourney', value: 3650 },
-  { name: 'Luma', value: 2180 },
-];
 
 export default function AdminDashboard() {
-  const users = useAdminStore((s) => s.users);
-  const apiKeys = useAdminStore((s) => s.apiKeys);
-  const engineEnabled = useAdminStore((s) => s.engineEnabled);
+  const { users, apiKeys, engineAssignments } = useAdminStore();
 
   const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.status === 'active').length;
+  const totalGenerations = users.reduce((acc, u) => acc + u.promptsGenerated, 0);
   const activeKeys = apiKeys.filter((k) => k.active).length;
-  const totalGens = usageData.reduce((a, b) => a + b.requests, 0);
-  const revenue = 2840;
-  const activeEngines = Object.values(engineEnabled).filter(Boolean).length;
+  const enabledEngines = engineAssignments.filter((e) => e.enabled).length;
 
-  const stats = [
-    {
-      label: 'Total Users',
-      value: totalUsers,
-      trend: '+12%',
-      trendUp: true,
-      icon: Users,
-      iconBg: 'bg-cyan/10',
-      iconColor: 'text-cyan',
-    },
-    {
-      label: 'Active API Keys',
-      value: activeKeys,
-      trend: 'of ' + apiKeys.length,
-      trendUp: true,
-      icon: Key,
-      iconBg: 'bg-amber/10',
-      iconColor: 'text-amber',
-    },
-    {
-      label: 'Generations Today',
-      value: (totalGens / 1000).toFixed(1) + 'K',
-      trend: '+8.4%',
-      trendUp: true,
-      icon: Zap,
-      iconBg: 'bg-pink/10',
-      iconColor: 'text-pink',
-    },
-    {
-      label: 'Revenue',
-      value: '$' + revenue.toLocaleString(),
-      trend: '-2.1%',
-      trendUp: false,
-      icon: CreditCard,
-      iconBg: 'bg-green/10',
-      iconColor: 'text-green',
-    },
-  ];
+  const topEngines = [...engineAssignments]
+    .filter((e) => e.enabled)
+    .sort((a, b) => b.usage - a.usage)
+    .slice(0, 5);
 
   const recentUsers = [...users]
-    .sort((a, b) => (a.lastActive === 'Just now' ? -1 : 1))
+    .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())
     .slice(0, 6);
 
-  return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      {/* Page title */}
-      <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
-        <p className="text-text-secondary text-sm mt-0.5">
-          Overview of your FrameForge platform
-        </p>
-      </motion.div>
+  const stats = [
+    { label: 'Total Users', value: totalUsers, change: '+12%', up: true, icon: Users, color: 'from-[#00d4ff] to-[#00d4ff]/50' },
+    { label: 'Active Now', value: activeUsers, change: '+5%', up: true, icon: Activity, color: 'from-green-400 to-green-400/50' },
+    { label: 'API Keys', value: activeKeys, change: '0', up: true, icon: Key, color: 'from-[#a855f7] to-[#a855f7]/50' },
+    { label: 'Total Prompts', value: totalGenerations.toLocaleString(), change: '+23%', up: true, icon: Zap, color: 'from-amber-400 to-amber-400/50' },
+  ];
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <motion.div
-            key={stat.label}
-            variants={item}
-            className="glass-card rounded-xl p-5 hover:border-border-hover transition-colors"
-          >
-            <div className="flex items-start justify-between">
-              <div className="space-y-3">
-                <p className="text-text-secondary text-xs font-medium uppercase tracking-wide">
-                  {stat.label}
-                </p>
-                <p className="text-2xl font-bold text-text-primary">{stat.value}</p>
-                <div className="flex items-center gap-1">
-                  {stat.trendUp ? (
-                    <TrendingUp className="w-3 h-3 text-green" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 text-red" />
-                  )}
-                  <span className={`text-xs font-medium ${stat.trendUp ? 'text-green' : 'text-red'}`}>
-                    {stat.trend}
-                  </span>
-                </div>
-              </div>
-              <div className={`p-2.5 rounded-lg ${stat.iconBg}`}>
-                <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-              </div>
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-white">Dashboard</h2>
+        <p className="text-sm text-[#9090a0] mt-1">FrameForge platform overview</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-4">
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-r ${s.color} flex items-center justify-center mb-3`}><s.icon size={16} className="text-white" /></div>
+            <p className="text-xl font-bold text-white">{s.value}</p>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-xs text-[#9090a0]">{s.label}</span>
+              <span className={`text-xs flex items-center gap-0.5 ml-auto ${s.up ? 'text-green-400' : 'text-red-400'}`}>{s.up ? <ArrowUp size={10} /> : <ArrowDown size={10} />}{s.change}</span>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <motion.div variants={item} className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">API Usage (7 Days)</h3>
-          <StatsChart data={usageData} />
-        </motion.div>
-        <motion.div variants={item} className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">Top Engines</h3>
-          <TopEnginesChart data={topEnginesData} />
-        </motion.div>
-      </div>
-
-      {/* Recent Users + System Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recent Users */}
-        <motion.div variants={item} className="lg:col-span-2 glass-card rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-text-primary">Recent Users</h3>
-            <span className="text-xs text-text-muted">{users.length} total</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-text-muted text-xs uppercase tracking-wide border-b border-border">
-                  <th className="text-left font-medium px-5 py-3">User</th>
-                  <th className="text-left font-medium px-5 py-3">Plan</th>
-                  <th className="text-left font-medium px-5 py-3">Prompts</th>
-                  <th className="text-left font-medium px-5 py-3">Last Active</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentUsers.map((user, i) => (
-                  <motion.tr
-                    key={user.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.05 }}
-                    className="border-b border-border/50 last:border-0 hover:bg-bg-elevated/40 transition-colors"
-                  >
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-bg-elevated border border-border flex items-center justify-center text-xs font-semibold text-text-secondary">
-                          {user.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-text-primary">{user.name}</p>
-                          <p className="text-xs text-text-muted">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      {user.plan === 'Premium' ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium bg-amber/10 text-amber px-2 py-0.5 rounded-full">
-                          <Crown className="w-3 h-3" />
-                          Premium
-                        </span>
-                      ) : (
-                        <span className="text-xs font-medium bg-bg-elevated text-text-secondary px-2 py-0.5 rounded-full">
-                          Free
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-text-secondary">{user.promptsGenerated.toLocaleString()}</td>
-                    <td className="px-5 py-3 text-text-muted text-xs">{user.lastActive}</td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-
-        {/* System Status */}
-        <motion.div variants={item} className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">System Status</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Engines */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-[#f0f0f5] mb-4 flex items-center gap-2"><TrendingUp size={14} className="text-[#a855f7]" /> Top Engines</h3>
           <div className="space-y-3">
-            {Object.entries(engineEnabled).map(([id, enabled]) => {
-              const engine = [
-                { id: 'gpt4o', name: 'GPT-4o' },
-                { id: 'claude', name: 'Claude 3.5' },
-                { id: 'dalle3', name: 'DALL-E 3' },
-                { id: 'midjourney', name: 'Midjourney' },
-                { id: 'runway', name: 'Runway Gen-3' },
-                { id: 'pika', name: 'Pika Labs' },
-                { id: 'luma', name: 'Luma Dream' },
-                { id: 'sora', name: 'Sora' },
-              ].find((e) => e.id === id);
-              if (!engine) return null;
-              return (
-                <div key={id} className="flex items-center justify-between py-1.5">
-                  <span className="text-sm text-text-secondary">{engine?.name}</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-2 h-2 rounded-full ${enabled ? 'bg-green' : 'bg-red'}`} />
-                    <span className={`text-xs ${enabled ? 'text-green' : 'text-red'}`}>
-                      {enabled ? 'Operational' : 'Offline'}
-                    </span>
-                  </div>
+            {topEngines.map((e) => (
+              <div key={e.engineId} className="flex items-center gap-3">
+                <span className="text-xs text-[#9090a0] w-24 truncate">{e.engineName}</span>
+                <div className="flex-1 h-2 bg-[#27273a] rounded-full overflow-hidden">
+                  <motion.div className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899]" initial={{ width: 0 }} animate={{ width: `${Math.min((e.usage / e.rateLimit) * 100, 100)}%` }} transition={{ duration: 0.8 }} />
                 </div>
-              );
-            })}
+                <span className="text-xs text-[#9090a0] w-12 text-right">{e.usage}</span>
+              </div>
+            ))}
           </div>
-          <div className="mt-4 pt-3 border-t border-border flex items-center gap-2 text-green">
-            <Check className="w-4 h-4" />
-            <span className="text-xs font-medium">All systems operational</span>
+        </motion.div>
+
+        {/* Recent Users */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-[#12121a]/80 backdrop-blur border border-[#27273a] rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-[#f0f0f5] mb-4 flex items-center gap-2"><Users size={14} className="text-[#00d4ff]" /> Recent Users</h3>
+          <div className="space-y-2">
+            {recentUsers.map((u) => (
+              <div key={u.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#27273a]/30 transition">
+                <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-[#27273a]" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#f0f0f5] truncate">{u.name}</p>
+                  <p className="text-xs text-[#606070]">{u.email}</p>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${u.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-400' : u.plan === 'premium' ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-500/20 text-gray-400'}`}>{u.plan}</span>
+                <span className={`w-2 h-2 rounded-full ${u.status === 'active' ? 'bg-green-400' : 'bg-red-400'}`} />
+              </div>
+            ))}
           </div>
         </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 }
